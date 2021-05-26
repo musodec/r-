@@ -1,3 +1,4 @@
+// r~ is a simple utility to remove regular files ending in ~ from the current directory.
 package main
 
 import (
@@ -15,7 +16,7 @@ func main() {
 	log.Printf("Working Directory: %s\n", d)
 	g, err := filepath.Glob("*~")
 	if err == filepath.ErrBadPattern {
-		log.Fatalf("ErrBadPattern " + err.Error())
+		log.Fatalf("ErrBadPattern: %s\n", err.Error())
 	}
 	for _, p := range g {
 		f, err := os.Stat(p)
@@ -28,7 +29,7 @@ func main() {
 		}
 		err = os.Remove(p)
 		if err != nil {
-			log.Printf("Failed to remove %q: %s\n", err.Error())
+			log.Printf("Failed to remove %q: %s\n", p, err.Error())
 		} else {
 			log.Printf("Removed %s\n", p)
 		}
