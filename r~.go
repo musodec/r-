@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,7 +16,7 @@ const (
 	ExitIOErr
 	versionStr = "v0.0.0"
 	verboseDoc = "Give more verbose output (i.e. set verbosity=2)"
-	verbageDoc = "Control verbosity level: 0=silent, 1=normal, 2=verbose, 3=debug"
+	verbageDoc = "Control verbosity level: 0=error-only, 1=normal, 2=verbose, 3=debug"
 	helpDoc    = "Print brief usage info and exit"
 	versionDoc = "Print version and exit"
 	recurseDoc = "Recurse through all subdirectories"
@@ -62,7 +63,7 @@ func main() {
 		log.Println("Flags --help and --version should be supplied alone.")
 		exitCode = ExitUsage
 	}
-	if verbose && verbosity != 2 {
+	if verbose && verbositySet() && verbosity != 2 {
 		log.Println("If both --verbose and --verbosity=n are supplied, then n must equal 2.")
 		flag.Usage()
 		os.Exit(ExitUsage)
@@ -77,12 +78,16 @@ func main() {
 		os.Exit(ExitFlagErr)
 	}
 
+	if verbosity >= 3 {
+		log.Printf("Verbosity level = %d\n", verbosity)
+	}
+
 	switch {
 	case help:
 		flag.Usage()
 		os.Exit(ExitUsage)
 	case version:
-		log.Println(versionStr)
+		fmt.Println(versionStr)
 		os.Exit(ExitUsage)
 	}
 
@@ -93,8 +98,8 @@ func main() {
 			log.Printf("Getwd: %v\n", err.Error())
 			os.Exit(ExitIOErr)
 		}
-		if verbose {
-			log.Printf("Working Directory: %s\n", d)
+		if verbosity >= 2 {
+			fmt.Printf("Working Directory: %s\n", d)
 		}
 	case 1:
 		d := flag.Arg(1)
@@ -128,7 +133,7 @@ func main() {
 			}
 		}
 		if !f.Mode().IsRegular() {
-			if verbose {
+			if verbosity >= 2 {
 				log.Printf("%s is not a regular file - skipping\n", p)
 			}
 			continue
@@ -141,20 +146,19 @@ func main() {
 			} else {
 				os.Exit(ExitIOErr)
 			}
-		} else {
-			log.Printf("Removed %s\n", p)
+		} else if verbosity >= 1 {
+			fmt.Printf("Removed %s\n", p)
 		}
 	}
 	os.Exit(exitCode)
 }
 
-// TODO: Check implicit flag processing of -help.
-// TODO: Silence doc string for long form args.
-// TODO: Clean "should never happen" occurrences.
-// TODO: Append return codes to usage message.
-// TODO: Add tests.
-// TODO: Implement recursive
-// TODO: Implement log levels
-// TODO: Implement -- for dirs w - prefix.
-// TODO: Makefile w test clean install
-// TODO: Add man + info page.
+func verbositySet() bool {
+	set := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "verbosity" {
+			set = true
+		}
+	})
+	return set
+}

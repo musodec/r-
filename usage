@@ -3,7 +3,7 @@ r~ --help
 r~ --Version
 
 <dir> defaults to .
---verbose only opt currently suported.
+--verbose only opt currently supported.
 
 r~
 r~ .
