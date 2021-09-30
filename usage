@@ -1,0 +1,24 @@
+r~ [options] [<dir>]
+r~ --help
+r~ --Version
+
+<dir> defaults to .
+--verbose only opt currently suported.
+
+r~
+r~ .
+r~ <dir>
+
+r~ [-v | --verbose] [-r | --recursive] [<dir>]
+
+r~ -h | --help
+
+r~ -V | --Version
+
+opts:
+  -v --verbose   // synonym for --verbosity=2
+  -y --verbosity // int in 0,1,2,3 <=> silent,normal,verbose,debug
+  -r --recursive
+  -c --continue-on-error
+
+If both --verbose and --verbosity are supplied, then verbosity must be 2.
