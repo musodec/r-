@@ -1,10 +1,7 @@
-Makefile w [build] test clean install.
 Add tests.
 Implement recursive
 
-Clean "should never happen" occurrences.
 Check implicit flag processing of -help.
-Silence doc string for long form args.
-Append return codes to usage message.
+Append return codes to usage message; prepend cmd usage.
 Implement -- for dirs w - prefix.
 Add man + info pages.
