@@ -1,7 +1,10 @@
-Add tests.
 Implement recursive
 
 Check implicit flag processing of -help.
 Append return codes to usage message; prepend cmd usage.
 Implement -- for dirs w - prefix.
 Add man + info pages.
+Support numbered backup removal and supplied suffix;
+    perhaps also respect associated env vars,
+    see Backup Options info page.
+Add more tests.

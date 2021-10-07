@@ -4,11 +4,11 @@ all : r~
 
 clean :
 	rm -vf *~
-	rm -vfR testdata/
+	rm -vfR testdir/
 	go clean
 
 test :
-	./mktest.sh
+	./dotest.sh
 
 #
 # Concrete Target
