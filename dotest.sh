@@ -13,6 +13,19 @@ mktestdir () {
     cd ..
 }
 
+if [[ $# -gt 1 ]]; then
+    echo 'Too many parameters supplied' >&2
+    exit 1
+elif [[ $# -eq 1 ]]; then
+    if [[ $1 == 'mktestdir' ]]; then
+	mktestdir
+	echo 'Made testdir'
+	exit 0
+    else
+	echo 'Unrecognized parameter supplied' >&2
+	exit 1
+    fi
+fi
 
 for (( N = 0; N <= 3; N++ )); do
     mktestdir

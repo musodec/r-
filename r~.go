@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -22,7 +23,8 @@ const (
 	recurseDoc = "Recurse through all subdirectories"
 	contDoc    = "Continue in case of IO error trying to remove a file"
 	emptyDoc   = ""
-	globSuffix = "*~"
+	suffix     = "~"
+	globSuffix = "*" + suffix
 )
 
 // Flag vars
@@ -75,26 +77,24 @@ func main() {
 		flag.Usage()
 		os.Exit(ExitUsage)
 	}
-	if recursive {
-		log.Println("Not yet implemented")
-		os.Exit(ExitFlagErr)
-	}
-
 	if verbosity >= 3 {
 		log.Printf("Verbosity level = %d\n", verbosity)
 	}
 
-	var dir string
-	var err error
+	// Process the help|version special cases:
 	switch {
 	case help:
 		flag.Usage()
-		os.Exit(ExitUsage)
+		os.Exit(exitCode)
 	case version:
 		fmt.Println(versionStr)
-		os.Exit(ExitUsage)
+		os.Exit(exitCode)
 	}
 
+	var dir string
+	var err error
+
+	// Check the directory argument:
 	switch flag.NArg() {
 	case 0:
 		dir, err = os.Getwd()
@@ -133,6 +133,18 @@ func main() {
 			fmt.Printf("Working relative to directory %s\n", dir)
 		}
 	}
+
+	if recursive {
+		log.Println("RECURSIVE WIP")
+		filepath.Walk(dir, walkFunc)
+		os.Exit(ExitFlagErr)
+	}
+	exitCode = rDir(dir)
+	os.Exit(exitCode)
+}
+
+func rDir(dir string) int {
+	exitCode := ExitOK
 	g, err := filepath.Glob(filepath.Join(dir, globSuffix))
 	if err == filepath.ErrBadPattern {
 		log.Printf("Glob ErrBadPattern: %v" + err.Error())
@@ -167,7 +179,42 @@ func main() {
 			fmt.Printf("Removed %s\n", filepath.Base(p))
 		}
 	}
-	os.Exit(exitCode)
+	return exitCode
+}
+
+var abort bool
+
+func walkFunc(path string, info os.FileInfo, err error) error {
+	exitCode := ExitOK
+	if abort {
+		return filepath.SkipDir
+	}
+	if err != nil {
+		log.Printf("Walk: %v\n", err)
+		if !continueOnErr {
+			abort = true
+			return filepath.SkipDir
+		}
+	}
+	if info.Mode().IsRegular() && strings.HasSuffix(path, suffix) {
+		// >>> DUP TODO: Combine
+		err = os.Remove(path)
+		if err != nil {
+			log.Printf("Failed to remove %q: %s\n", path, err.Error())
+			if continueOnErr {
+				exitCode = ExitIOErr
+			} else {
+				os.Exit(ExitIOErr)
+			}
+		} else if verbosity >= 1 {
+			fmt.Printf("Removed %s\n", path)
+		}
+		// <<<
+	} else if info.IsDir() && verbosity >= 2 {
+		fmt.Printf("Entering %s\n", path)
+	}
+	_ = exitCode // return/globalize exitCode
+	return nil
 }
 
 func verbositySet() bool {

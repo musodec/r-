@@ -3,7 +3,7 @@
 all : r~
 
 clean :
-	rm -vf *~
+	rm -vf *~ testdata/*~
 	rm -vfR testdir/
 	go clean
 

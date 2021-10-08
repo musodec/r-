@@ -1,4 +1,4 @@
-Implement recursive
+Tidy recursive
 
 Check implicit flag processing of -help.
 Append return codes to usage message; prepend cmd usage.
@@ -8,3 +8,4 @@ Support numbered backup removal and supplied suffix;
     perhaps also respect associated env vars,
     see Backup Options info page.
 Add more tests.
+Support return code quiet mode.

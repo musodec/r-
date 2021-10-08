@@ -1,0 +1,11 @@
+Unfortunately we have two different implementations:
+one for recursive traversal and another for the
+single-directory case.  Glob doesn't appear to
+support recursion (I've tried it with "**/*~"
+and the like) whereas to invoke rDir from walkFunc
+would trip up the walk by removing files that were
+there just a moment ago.
+
+Ultimately perhaps a custom traversal routine may be
+better: avoid the above split/duplication of
+implementation + avoid the waste of sort in Walk.
