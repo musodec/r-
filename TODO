@@ -1,5 +1,3 @@
-Tidy recursive
-
 Check implicit flag processing of -help.
 Append return codes to usage message; prepend cmd usage.
 Implement -- for dirs w - prefix.

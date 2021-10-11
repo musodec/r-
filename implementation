@@ -9,3 +9,14 @@ there just a moment ago.
 Ultimately perhaps a custom traversal routine may be
 better: avoid the above split/duplication of
 implementation + avoid the waste of sort in Walk.
+
+Global exitCode with its own type is a little clunky,
+but it does effectively coerce exit values to be
+one such ExitCode, for all non-panic termination.
+It also facilitates potential flag bit-wise OR of
+multiple exit causes, if ever needed in future.
+The hard error return type of WalkFunc means that
+wrapping & unwrapping of errors from walkFunc
+would have been necessary for a more functional
+approach.  Arguably, this would have been even
+more clunky.

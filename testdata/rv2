@@ -1,0 +1,32 @@
+Working Directory: /home/dec/sdev/go/src/r~/testdir
+Entering /home/dec/sdev/go/src/r~/testdir
+Removed /home/dec/sdev/go/src/r~/testdir/--flag-like~
+Removed /home/dec/sdev/go/src/r~/testdir/.hid~
+Entering /home/dec/sdev/go/src/r~/testdir/dir
+Entering /home/dec/sdev/go/src/r~/testdir/dir1~
+ff is not a regular file - skipping
+ff1~ is not a regular file - skipping
+ok is not a regular file - skipping
+Removed /home/dec/sdev/go/src/r~/testdir/reg~
+Removed /home/dec/sdev/go/src/r~/testdir/spacy ~
+Entering /home/dec/sdev/go/src/r~/testdir/x
+Removed /home/dec/sdev/go/src/r~/testdir/x/--flag-like~
+Removed /home/dec/sdev/go/src/r~/testdir/x/.hid~
+Entering /home/dec/sdev/go/src/r~/testdir/x/dir
+Entering /home/dec/sdev/go/src/r~/testdir/x/dir1~
+ff is not a regular file - skipping
+ff1~ is not a regular file - skipping
+ok is not a regular file - skipping
+Removed /home/dec/sdev/go/src/r~/testdir/x/reg~
+Removed /home/dec/sdev/go/src/r~/testdir/x/spacy ~
+Entering /home/dec/sdev/go/src/r~/testdir/x/y
+Entering /home/dec/sdev/go/src/r~/testdir/x/y/z
+Removed /home/dec/sdev/go/src/r~/testdir/x/y/z/--flag-like~
+Removed /home/dec/sdev/go/src/r~/testdir/x/y/z/.hid~
+Entering /home/dec/sdev/go/src/r~/testdir/x/y/z/dir
+Entering /home/dec/sdev/go/src/r~/testdir/x/y/z/dir1~
+ff is not a regular file - skipping
+ff1~ is not a regular file - skipping
+ok is not a regular file - skipping
+Removed /home/dec/sdev/go/src/r~/testdir/x/y/z/reg~
+Removed /home/dec/sdev/go/src/r~/testdir/x/y/z/spacy ~

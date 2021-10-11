@@ -10,12 +10,35 @@ import (
 	"strings"
 )
 
+type ExitCode int
+
 const (
-	ExitOK = iota
+	ExitOK ExitCode = iota
 	ExitUsage
 	ExitFlagErr // To match flag package usage.
 	ExitIOErr
-	versionStr = "v0.0.0"
+)
+
+var exitCode ExitCode
+
+func setExitCode(c ExitCode) { exitCode = c }
+
+func getExitCode() ExitCode { return exitCode }
+
+func exitWithCode(c ...ExitCode) {
+	switch len(c) {
+	case 0:
+		// Do nothing.
+	case 1:
+		exitCode = c[0]
+	default:
+		panic("Internal error: exitWithCode case fallthrough")
+	}
+	os.Exit(int(getExitCode()))
+}
+
+const (
+	versionStr = "v0.0.1"
 	verboseDoc = "Give more verbose output (i.e. set verbosity=2)"
 	verbageDoc = "Control verbosity level: 0=error-only, 1=normal, 2=verbose, 3=debug"
 	helpDoc    = "Print brief usage info and exit"
@@ -46,6 +69,7 @@ func init() {
 	flag.BoolVar(&continueOnErr, "continue-on-error", false, emptyDoc)
 	flag.IntVar(&verbosity, "y", 1, emptyDoc)
 	flag.IntVar(&verbosity, "verbosity", 1, verbageDoc)
+	// setExitCode(ExitOK) // implicitly
 }
 
 func main() {
@@ -54,28 +78,27 @@ func main() {
 	if verbosity >= 3 {
 		log.Printf("NFlags = %d; NArgs = %d", flag.NFlag(), flag.NArg())
 	}
-	var exitCode = ExitOK
 
 	// Sanity checks on command line:
 	if flag.NArg() > 1 {
 		log.Printf("%s takes at most one argument.\nIf options are supplied, they must precede the argument.\n",
 			os.Args[0])
 		flag.Usage()
-		os.Exit(ExitUsage)
+		exitWithCode(ExitUsage)
 	}
 	if flag.NFlag() > 1 && (help || version) {
 		log.Println("Options --help and --version should be supplied alone.")
-		exitCode = ExitUsage
+		setExitCode(ExitUsage)
 	}
 	if verbose && verbositySet() && verbosity != 2 {
 		log.Println("If both --verbose and --verbosity=n are supplied, then n must equal 2.")
 		flag.Usage()
-		os.Exit(ExitUsage)
+		exitWithCode(ExitUsage)
 	}
 	if verbosity < 0 || verbosity > 3 {
 		log.Println("Option --verbosity=n must be in range 0 <= n <= 3.")
 		flag.Usage()
-		os.Exit(ExitUsage)
+		exitWithCode(ExitUsage)
 	}
 	if verbosity >= 3 {
 		log.Printf("Verbosity level = %d\n", verbosity)
@@ -85,10 +108,10 @@ func main() {
 	switch {
 	case help:
 		flag.Usage()
-		os.Exit(exitCode)
+		exitWithCode()
 	case version:
 		fmt.Println(versionStr)
-		os.Exit(exitCode)
+		exitWithCode()
 	}
 
 	var dir string
@@ -100,7 +123,7 @@ func main() {
 		dir, err = os.Getwd()
 		if err != nil {
 			log.Printf("Getwd: %v\n", err.Error())
-			os.Exit(ExitIOErr)
+			exitWithCode(ExitIOErr)
 		}
 		if verbosity >= 2 {
 			fmt.Printf("Working Directory: %s\n", dir)
@@ -116,18 +139,18 @@ func main() {
 			b, err := os.Getwd()
 			if err != nil {
 				log.Printf("Getwd: %v\n", err.Error())
-				os.Exit(ExitIOErr)
+				exitWithCode(ExitIOErr)
 			}
 			dir = filepath.Join(b, p)
 		}
 		fi, err := os.Stat(dir)
 		if err != nil {
 			log.Print(err)
-			os.Exit(ExitIOErr)
+			exitWithCode(ExitIOErr)
 		}
 		if !fi.IsDir() {
 			log.Printf("%q not a directory", dir)
-			os.Exit(ExitIOErr)
+			exitWithCode(ExitIOErr)
 		}
 		if verbosity >= 2 {
 			fmt.Printf("Working relative to directory %s\n", dir)
@@ -135,29 +158,33 @@ func main() {
 	}
 
 	if recursive {
-		log.Println("RECURSIVE WIP")
-		filepath.Walk(dir, walkFunc)
-		os.Exit(ExitFlagErr)
+		err = filepath.Walk(dir, walkFunc)
+		if err != nil {
+			log.Printf("Walk: %v\n", err)
+			if c := getExitCode(); c == ExitOK {
+				setExitCode(ExitIOErr)
+			}
+		}
+	} else {
+		rDir(dir)
 	}
-	exitCode = rDir(dir)
-	os.Exit(exitCode)
+	exitWithCode()
 }
 
-func rDir(dir string) int {
-	exitCode := ExitOK
+func rDir(dir string) {
 	g, err := filepath.Glob(filepath.Join(dir, globSuffix))
 	if err == filepath.ErrBadPattern {
 		log.Printf("Glob ErrBadPattern: %v" + err.Error())
-		os.Exit(ExitIOErr)
+		exitWithCode(ExitIOErr)
 	}
 	for _, p := range g {
 		f, err := os.Stat(p)
 		if err != nil {
 			log.Printf("Stat: %v\n", err.Error())
 			if continueOnErr {
-				exitCode = ExitIOErr
+				setExitCode(ExitIOErr)
 			} else {
-				os.Exit(ExitIOErr)
+				exitWithCode(ExitIOErr)
 			}
 		}
 		if !f.Mode().IsRegular() {
@@ -167,25 +194,30 @@ func rDir(dir string) int {
 			}
 			continue
 		}
-		err = os.Remove(p)
-		if err != nil {
-			log.Printf("Failed to remove %q: %s\n", p, err.Error())
-			if continueOnErr {
-				exitCode = ExitIOErr
-			} else {
-				os.Exit(ExitIOErr)
-			}
-		} else if verbosity >= 1 {
-			fmt.Printf("Removed %s\n", filepath.Base(p))
-		}
+		rm(p, true)
 	}
-	return exitCode
+}
+
+func rm(path string, base bool) {
+	err := os.Remove(path)
+	if err != nil {
+		log.Printf("Failed to remove %q: %s\n", path, err.Error())
+		if continueOnErr {
+			setExitCode(ExitIOErr)
+		} else {
+			exitWithCode(ExitIOErr)
+		}
+	} else if verbosity >= 1 {
+		if base {
+			path = filepath.Base(path)
+		}
+		fmt.Printf("Removed %s\n", path)
+	}
 }
 
 var abort bool
 
 func walkFunc(path string, info os.FileInfo, err error) error {
-	exitCode := ExitOK
 	if abort {
 		return filepath.SkipDir
 	}
@@ -197,23 +229,13 @@ func walkFunc(path string, info os.FileInfo, err error) error {
 		}
 	}
 	if info.Mode().IsRegular() && strings.HasSuffix(path, suffix) {
-		// >>> DUP TODO: Combine
-		err = os.Remove(path)
-		if err != nil {
-			log.Printf("Failed to remove %q: %s\n", path, err.Error())
-			if continueOnErr {
-				exitCode = ExitIOErr
-			} else {
-				os.Exit(ExitIOErr)
-			}
-		} else if verbosity >= 1 {
-			fmt.Printf("Removed %s\n", path)
-		}
-		// <<<
+		rm(path, false)
 	} else if info.IsDir() && verbosity >= 2 {
 		fmt.Printf("Entering %s\n", path)
+	} else if verbosity >= 2 {
+		log.Printf("%s is not a regular file - skipping\n",
+			filepath.Base(path))
 	}
-	_ = exitCode // return/globalize exitCode
 	return nil
 }
 
