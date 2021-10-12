@@ -1,3 +1,6 @@
+RATIONALE:
+=========
+
 Unfortunately we have two different implementations:
 one for recursive traversal and another for the
 single-directory case.  Glob doesn't appear to
@@ -20,3 +23,24 @@ wrapping & unwrapping of errors from walkFunc
 would have been necessary for a more functional
 approach.  Arguably, this would have been even
 more clunky.
+
+
+USAGE:
+=====
+
+r~ [options...] [--] [<dir>]
+r~ -h | --help
+r~ -V | --Version
+
+<dir> defaults to "."; relative paths will be resolved wrt ".".
+Use terminator "--" to indicate directory path begins with hyphen.
+
+options:
+  -v --verbose   // synonym for --verbosity=2
+  -y --verbosity // int in 0,1,2,3 <-> silent,normal,verbose,debug
+  -r --recursive
+  -c --continue-on-error
+
+If both --verbose and --verbosity are supplied, then verbosity must be 2.
+If either --help or --Version are supplied, then that must be the only opt supplied.
+Single or double hyphens OK; no Gnu readline style combining of short form options.

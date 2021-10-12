@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -38,22 +39,39 @@ func exitWithCode(c ...ExitCode) {
 }
 
 const (
-	versionStr = "v0.0.1"
+	versionStr = "v0.0.2"
 	verboseDoc = "Give more verbose output (i.e. set verbosity=2)"
 	verbageDoc = "Control verbosity level: 0=error-only, 1=normal, 2=verbose, 3=debug"
 	helpDoc    = "Print brief usage info and exit"
 	versionDoc = "Print version and exit"
 	recurseDoc = "Recurse through all subdirectories"
-	contDoc    = "Continue in case of IO error trying to remove a file"
+	contDoc    = "Continue in case of IO error (or flag parsing errors if supplied earlier)"
 	emptyDoc   = ""
 	suffix     = "~"
 	globSuffix = "*" + suffix
+	contErrPat = `^--?c(ontinue-on-error)?$`
+	usagePre   = `  r~ [options...] [--] [<dir>]
+  r~ --help
+  r~ --Version
+
+<dir> defaults to the current working directory, and relative paths
+will be resolved with respect to the current working directory.
+
+Options take one or two hyphens:
+`
+	usagePost = `Exit value:
+  0 OK
+  1 Usage error
+  2 Flag parsing error
+  3 IO error
+`
 )
 
 // Flag vars
 var (
 	verbose, help, version, recursive, continueOnErr bool
 	verbosity                                        int
+	contErrRe                                        *regexp.Regexp
 )
 
 func init() {
@@ -67,16 +85,39 @@ func init() {
 	flag.BoolVar(&recursive, "recursive", false, emptyDoc)
 	flag.BoolVar(&continueOnErr, "c", false, contDoc)
 	flag.BoolVar(&continueOnErr, "continue-on-error", false, emptyDoc)
-	flag.IntVar(&verbosity, "y", 1, emptyDoc)
-	flag.IntVar(&verbosity, "verbosity", 1, verbageDoc)
+	flag.IntVar(&verbosity, "y", 1, verbageDoc)
+	flag.IntVar(&verbosity, "verbosity", 1, emptyDoc)
 	// setExitCode(ExitOK) // implicitly
+	contErrRe = regexp.MustCompile(contErrPat)
 }
 
 func main() {
-	flag.Parse()
+	var err error
+	if contOnErrArg() {
+		flag.CommandLine.Init(
+			filepath.Base(os.Args[0])+" --continue-on-error",
+			flag.ContinueOnError)
+		err = flag.CommandLine.Parse(os.Args[1:])
+		if err != nil {
+			setExitCode(ExitFlagErr)
+		}
+	} else {
+		flag.Parse()
+	}
+
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(),
+			"Usage of %s:\n%s", os.Args[0], usagePre)
+		flag.PrintDefaults()
+		fmt.Fprintf(flag.CommandLine.Output(),
+			"\n%s", usagePost)
+	}
+
 	log.SetFlags(0)
 	if verbosity >= 3 {
 		log.Printf("NFlags = %d; NArgs = %d", flag.NFlag(), flag.NArg())
+		log.Printf("Version = %s\nverbosity = %d\nrecursive = %t\ncontinue-on-error = %t\n",
+			versionStr, verbosity, recursive, continueOnErr)
 	}
 
 	// Sanity checks on command line:
@@ -94,28 +135,29 @@ func main() {
 		log.Println("If both --verbose and --verbosity=n are supplied, then n must equal 2.")
 		flag.Usage()
 		exitWithCode(ExitUsage)
+	} else if verbose {
+		verbosity = 2
 	}
 	if verbosity < 0 || verbosity > 3 {
 		log.Println("Option --verbosity=n must be in range 0 <= n <= 3.")
 		flag.Usage()
 		exitWithCode(ExitUsage)
 	}
-	if verbosity >= 3 {
-		log.Printf("Verbosity level = %d\n", verbosity)
-	}
 
 	// Process the help|version special cases:
 	switch {
 	case help:
+		if getExitCode() == ExitOK {
+			flag.CommandLine.SetOutput(os.Stdout)
+		}
 		flag.Usage()
 		exitWithCode()
 	case version:
-		fmt.Println(versionStr)
+		fmt.Printf("%s %s\n", filepath.Base(os.Args[0]), versionStr)
 		exitWithCode()
 	}
 
 	var dir string
-	var err error
 
 	// Check the directory argument:
 	switch flag.NArg() {
@@ -247,4 +289,16 @@ func verbositySet() bool {
 		}
 	})
 	return set
+}
+
+func contOnErrArg() bool {
+	if len(os.Args) <= 1 {
+		return false
+	}
+	for _, a := range os.Args[1:] {
+		if contErrRe.MatchString(a) {
+			return true
+		}
+	}
+	return false
 }

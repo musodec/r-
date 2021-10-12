@@ -1,5 +1,8 @@
 NFlags = 2; NArgs = 0
-Verbosity level = 3
+Version = v0.0.2
+verbosity = 3
+recursive = true
+continue-on-error = false
 Working Directory: /home/dec/sdev/go/src/r~/testdir
 Entering /home/dec/sdev/go/src/r~/testdir
 Removed /home/dec/sdev/go/src/r~/testdir/--flag-like~

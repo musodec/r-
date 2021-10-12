@@ -63,12 +63,12 @@ for (( N = 0; N <= 3; N++ )); do
     diff /tmp/v$N ../testdata/v$N
     if [[ $? -ne 0 ]]; then
 	FAIL=1
-	echo log FAILURE at verbosity=$N
+	echo log FAILURE at verbosity=$N >&2
     fi
     diff <(ls -A --color=no) ../testdata/lsA1
     if [[ $? -ne 0 ]]; then
 	FAIL=1
-	echo r~ FAILURE at verbosity=$N
+	echo r~ FAILURE at verbosity=$N >&2
     fi
     cd ..
 done
@@ -88,12 +88,12 @@ for (( N = 0; N <= 3; N++ )); do
     diff /tmp/rv$N ../testdata/rv$N
     if [[ $? -ne 0 ]]; then
 	FAIL=1
-	echo recursive log FAILURE at verbosity=$N
+	echo recursive log FAILURE at verbosity=$N >&2
     fi
     diff <(ls -AR --color=no) ../testdata/lsAR1
     if [[ $? -ne 0 ]]; then
 	FAIL=1
-	echo recursive log FAILURE at verbosity=$N
+	echo recursive log FAILURE at verbosity=$N >&2
     fi
     cd ..
 done
