@@ -1,4 +1,4 @@
-.PHONY : all clean install test
+.PHONY : all clean install test testdir
 
 all : r~
 
@@ -9,6 +9,9 @@ clean :
 
 test :
 	./dotest.sh
+
+testdir :
+	./dotest.sh mktestdir
 
 #
 # Concrete Target

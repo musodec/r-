@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
@@ -39,17 +40,19 @@ func exitWithCode(c ...ExitCode) {
 }
 
 const (
-	versionStr = "v0.0.2"
+	versionStr = "v0.0.3"
 	verboseDoc = "Give more verbose output (i.e. set verbosity=2)"
 	verbageDoc = "Control verbosity level: 0=error-only, 1=normal, 2=verbose, 3=debug"
 	helpDoc    = "Print brief usage info and exit"
 	versionDoc = "Print version and exit"
 	recurseDoc = "Recurse through all subdirectories"
 	contDoc    = "Continue in case of IO error (or flag parsing errors if supplied earlier)"
+	interDoc   = "Prompt for each deletion"
 	emptyDoc   = ""
 	suffix     = "~"
 	globSuffix = "*" + suffix
 	contErrPat = `^--?c(ontinue-on-error)?$`
+	yesOrNoPat = `(?i:^[[:blank:]]*y(?:es)?\W)|(?:^\s*$)`
 	usagePre   = `  r~ [options...] [--] [<dir>]
   r~ --help
   r~ --Version
@@ -69,9 +72,9 @@ Options take one or two hyphens:
 
 // Flag vars
 var (
-	verbose, help, version, recursive, continueOnErr bool
-	verbosity                                        int
-	contErrRe                                        *regexp.Regexp
+	verbose, help, version, recursive, continueOnErr, interactive bool
+	verbosity                                                     int
+	contErrRe, yesOrNoRe                                          *regexp.Regexp
 )
 
 func init() {
@@ -85,10 +88,13 @@ func init() {
 	flag.BoolVar(&recursive, "recursive", false, emptyDoc)
 	flag.BoolVar(&continueOnErr, "c", false, contDoc)
 	flag.BoolVar(&continueOnErr, "continue-on-error", false, emptyDoc)
+	flag.BoolVar(&interactive, "i", false, interDoc)
+	flag.BoolVar(&interactive, "interactive", false, emptyDoc)
 	flag.IntVar(&verbosity, "y", 1, verbageDoc)
 	flag.IntVar(&verbosity, "verbosity", 1, emptyDoc)
 	// setExitCode(ExitOK) // implicitly
 	contErrRe = regexp.MustCompile(contErrPat)
+	yesOrNoRe = regexp.MustCompile(yesOrNoPat)
 }
 
 func main() {
@@ -241,6 +247,32 @@ func rDir(dir string) {
 }
 
 func rm(path string, base bool) {
+	maybeBase := path
+	if base {
+		maybeBase = filepath.Base(path)
+	}
+	if interactive {
+		fmt.Printf("Remove %s? [Y/n] ", maybeBase)
+		r := bufio.NewReader(os.Stdin)
+		s, err := r.ReadString('\n')
+		if err != nil {
+			log.Printf("ReadAll: %v\n", err)
+			if continueOnErr {
+				setExitCode(ExitIOErr)
+			} else {
+				exitWithCode(ExitIOErr)
+			}
+		}
+		if verbosity >= 3 {
+			log.Printf("Read: %q\n", s)
+		}
+		if fi, _ := os.Stdin.Stat(); fi.Mode()&os.ModeCharDevice == 0 {
+			fmt.Println()
+		}
+		if !yesOrNoRe.MatchString(s) {
+			return
+		}
+	}
 	err := os.Remove(path)
 	if err != nil {
 		log.Printf("Failed to remove %q: %s\n", path, err.Error())
@@ -250,10 +282,7 @@ func rm(path string, base bool) {
 			exitWithCode(ExitIOErr)
 		}
 	} else if verbosity >= 1 {
-		if base {
-			path = filepath.Base(path)
-		}
-		fmt.Printf("Removed %s\n", path)
+		fmt.Printf("Removed %s\n", maybeBase)
 	}
 }
 
@@ -272,9 +301,9 @@ func walkFunc(path string, info os.FileInfo, err error) error {
 	}
 	if info.Mode().IsRegular() && strings.HasSuffix(path, suffix) {
 		rm(path, false)
-	} else if info.IsDir() && verbosity >= 2 {
+	} else if verbosity >= 2 && info.IsDir() {
 		fmt.Printf("Entering %s\n", path)
-	} else if verbosity >= 2 {
+	} else if verbosity >= 2 && !info.Mode().IsRegular() {
 		log.Printf("%s is not a regular file - skipping\n",
 			filepath.Base(path))
 	}

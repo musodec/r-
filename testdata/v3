@@ -1,5 +1,5 @@
 NFlags = 1; NArgs = 0
-Version = v0.0.2
+Version = v0.0.3
 verbosity = 3
 recursive = false
 continue-on-error = false

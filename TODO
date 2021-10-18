@@ -1,6 +1,7 @@
+Add more tests...
+
 Add README, man + info pages.
 Support numbered backup removal and supplied suffix;
     perhaps also respect associated env vars,
     see Backup Options info page.
-Add more tests...
 Support return code mode.

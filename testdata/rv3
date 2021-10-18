@@ -1,5 +1,5 @@
 NFlags = 2; NArgs = 0
-Version = v0.0.2
+Version = v0.0.3
 verbosity = 3
 recursive = true
 continue-on-error = false
@@ -11,7 +11,6 @@ Entering /home/dec/sdev/go/src/r~/testdir/dir
 Entering /home/dec/sdev/go/src/r~/testdir/dir1~
 ff is not a regular file - skipping
 ff1~ is not a regular file - skipping
-ok is not a regular file - skipping
 Removed /home/dec/sdev/go/src/r~/testdir/reg~
 Removed /home/dec/sdev/go/src/r~/testdir/spacy ~
 Entering /home/dec/sdev/go/src/r~/testdir/x
@@ -21,7 +20,6 @@ Entering /home/dec/sdev/go/src/r~/testdir/x/dir
 Entering /home/dec/sdev/go/src/r~/testdir/x/dir1~
 ff is not a regular file - skipping
 ff1~ is not a regular file - skipping
-ok is not a regular file - skipping
 Removed /home/dec/sdev/go/src/r~/testdir/x/reg~
 Removed /home/dec/sdev/go/src/r~/testdir/x/spacy ~
 Entering /home/dec/sdev/go/src/r~/testdir/x/y
@@ -32,6 +30,5 @@ Entering /home/dec/sdev/go/src/r~/testdir/x/y/z/dir
 Entering /home/dec/sdev/go/src/r~/testdir/x/y/z/dir1~
 ff is not a regular file - skipping
 ff1~ is not a regular file - skipping
-ok is not a regular file - skipping
 Removed /home/dec/sdev/go/src/r~/testdir/x/y/z/reg~
 Removed /home/dec/sdev/go/src/r~/testdir/x/y/z/spacy ~
