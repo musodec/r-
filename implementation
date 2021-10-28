@@ -1,13 +1,13 @@
 RATIONALE:
 =========
 
-Unfortunately we have two different implementations:
-one for recursive traversal and another for the
-single-directory case.  Glob doesn't appear to
-support recursion (I've tried it with "**/*~"
-and the like) whereas to invoke rDir from walkFunc
-would trip up the walk by removing files that were
-there just a moment ago.
+Unfortunately we have two different implementations
+of directory traversal: one for the recursive case
+and another for the single-directory case.  Glob
+doesn't appear to support recursion (I've tried it
+with "**/*~" and the like) whereas to invoke rDir
+from walkFunc would trip up the walk by removing
+files that were there just a moment ago.
 
 Ultimately perhaps a custom traversal routine may be
 better: avoid the above split/duplication of
@@ -16,8 +16,8 @@ implementation + avoid the waste of sort in Walk.
 Global exitCode with its own type is a little clunky,
 but it does effectively coerce exit values to be
 one such ExitCode, for all non-panic termination.
-It also facilitates potential flag bit-wise OR of
-multiple exit causes, if ever needed in future.
+(It also facilitates potential flag bit-wise OR of
+multiple exit causes, if ever needed in future.)
 The hard error return type of WalkFunc means that
 wrapping & unwrapping of errors from walkFunc
 would have been necessary for a more functional
@@ -39,7 +39,8 @@ options:
   -v --verbose   // synonym for --verbosity=2
   -y --verbosity // int in 0,1,2,3 <-> silent,normal,verbose,debug
   -r --recursive
-  -c --continue-on-error
+  -i --interactive
+  -k --keep-going
 
 If both --verbose and --verbosity are supplied, then verbosity must be 2.
 If either --help or --Version are supplied, then that must be the only opt supplied.

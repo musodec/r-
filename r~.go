@@ -14,6 +14,7 @@ import (
 
 type ExitCode int
 
+// All non-panic exits should return one of these ExitCode's to the caller.
 const (
 	ExitOK ExitCode = iota
 	ExitUsage
@@ -46,12 +47,12 @@ const (
 	helpDoc    = "Print brief usage info and exit"
 	versionDoc = "Print version and exit"
 	recurseDoc = "Recurse through all subdirectories"
-	contDoc    = "Continue in case of IO error (or flag parsing errors if supplied earlier)"
+	keepDoc    = "Keep going in case of IO error (or flag parsing errors if supplied before the error occurs)"
 	interDoc   = "Prompt for each deletion"
 	emptyDoc   = ""
 	suffix     = "~"
 	globSuffix = "*" + suffix
-	contErrPat = `^--?c(ontinue-on-error)?$`
+	keepOnPat  = `^--?k(keep-going)?$`
 	yesOrNoPat = `(?i:^[[:blank:]]*y(?:es)?\W)|(?:^\s*$)`
 	usagePre   = `  r~ [options...] [--] [<dir>]
   r~ --help
@@ -60,7 +61,7 @@ const (
 <dir> defaults to the current working directory, and relative paths
 will be resolved with respect to the current working directory.
 
-Options take one or two hyphens:
+Short options may not be combined.  Long options take one or two hyphens:
 `
 	usagePost = `Exit value:
   0 OK
@@ -72,9 +73,9 @@ Options take one or two hyphens:
 
 // Flag vars
 var (
-	verbose, help, version, recursive, continueOnErr, interactive bool
-	verbosity                                                     int
-	contErrRe, yesOrNoRe                                          *regexp.Regexp
+	verbose, help, version, recursive, keepGoing, interactive bool
+	verbosity                                                 int
+	keepOnRe, yesOrNoRe                                       *regexp.Regexp
 )
 
 func init() {
@@ -86,22 +87,23 @@ func init() {
 	flag.BoolVar(&version, "Version", false, emptyDoc)
 	flag.BoolVar(&recursive, "r", false, recurseDoc)
 	flag.BoolVar(&recursive, "recursive", false, emptyDoc)
-	flag.BoolVar(&continueOnErr, "c", false, contDoc)
-	flag.BoolVar(&continueOnErr, "continue-on-error", false, emptyDoc)
+	flag.BoolVar(&keepGoing, "k", false, keepDoc)
+	flag.BoolVar(&keepGoing, "keep-going", false, emptyDoc)
 	flag.BoolVar(&interactive, "i", false, interDoc)
 	flag.BoolVar(&interactive, "interactive", false, emptyDoc)
 	flag.IntVar(&verbosity, "y", 1, verbageDoc)
 	flag.IntVar(&verbosity, "verbosity", 1, emptyDoc)
 	// setExitCode(ExitOK) // implicitly
-	contErrRe = regexp.MustCompile(contErrPat)
+	keepOnRe = regexp.MustCompile(keepOnPat)
 	yesOrNoRe = regexp.MustCompile(yesOrNoPat)
 }
 
+// main mostly concerns itself with sanitization of arg and flags.
 func main() {
 	var err error
-	if contOnErrArg() {
+	if keepOnArg() {
 		flag.CommandLine.Init(
-			filepath.Base(os.Args[0])+" --continue-on-error",
+			filepath.Base(os.Args[0])+" --keep-going",
 			flag.ContinueOnError)
 		err = flag.CommandLine.Parse(os.Args[1:])
 		if err != nil {
@@ -122,8 +124,8 @@ func main() {
 	log.SetFlags(0)
 	if verbosity >= 3 {
 		log.Printf("NFlags = %d; NArgs = %d", flag.NFlag(), flag.NArg())
-		log.Printf("Version = %s\nverbosity = %d\nrecursive = %t\ncontinue-on-error = %t\n",
-			versionStr, verbosity, recursive, continueOnErr)
+		log.Printf("Version = %s\nverbosity = %d\nrecursive = %t\nkeep-going = %t\n",
+			versionStr, verbosity, recursive, keepGoing)
 	}
 
 	// Sanity checks on command line:
@@ -205,6 +207,8 @@ func main() {
 		}
 	}
 
+	// Unfortunately we have different directory traversal routines,
+	// for recursive and non-recursive cases.
 	if recursive {
 		err = filepath.Walk(dir, walkFunc)
 		if err != nil {
@@ -216,9 +220,11 @@ func main() {
 	} else {
 		rDir(dir)
 	}
+
 	exitWithCode()
 }
 
+// rDir iterates over files in dir, calling rm as needed.
 func rDir(dir string) {
 	g, err := filepath.Glob(filepath.Join(dir, globSuffix))
 	if err == filepath.ErrBadPattern {
@@ -229,7 +235,7 @@ func rDir(dir string) {
 		f, err := os.Stat(p)
 		if err != nil {
 			log.Printf("Stat: %v\n", err.Error())
-			if continueOnErr {
+			if keepGoing {
 				setExitCode(ExitIOErr)
 			} else {
 				exitWithCode(ExitIOErr)
@@ -246,6 +252,7 @@ func rDir(dir string) {
 	}
 }
 
+// rm does the actual file removal.
 func rm(path string, base bool) {
 	maybeBase := path
 	if base {
@@ -257,7 +264,7 @@ func rm(path string, base bool) {
 		s, err := r.ReadString('\n')
 		if err != nil {
 			log.Printf("ReadAll: %v\n", err)
-			if continueOnErr {
+			if keepGoing {
 				setExitCode(ExitIOErr)
 			} else {
 				exitWithCode(ExitIOErr)
@@ -276,7 +283,7 @@ func rm(path string, base bool) {
 	err := os.Remove(path)
 	if err != nil {
 		log.Printf("Failed to remove %q: %s\n", path, err.Error())
-		if continueOnErr {
+		if keepGoing {
 			setExitCode(ExitIOErr)
 		} else {
 			exitWithCode(ExitIOErr)
@@ -286,15 +293,18 @@ func rm(path string, base bool) {
 	}
 }
 
+// abort is used as a flag to bail out of recursive directory traversal,
+// as appropriate.
 var abort bool
 
+// walkFunc is the WalkFunc for Walk.
 func walkFunc(path string, info os.FileInfo, err error) error {
 	if abort {
 		return filepath.SkipDir
 	}
 	if err != nil {
 		log.Printf("Walk: %v\n", err)
-		if !continueOnErr {
+		if !keepGoing {
 			abort = true
 			return filepath.SkipDir
 		}
@@ -310,22 +320,26 @@ func walkFunc(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
+// verbositySet returns true iff verbosity has been explicitly
+// supplied among args.
 func verbositySet() bool {
 	set := false
 	flag.Visit(func(f *flag.Flag) {
-		if f.Name == "verbosity" {
+		if f.Name == "verbosity" || f.Name == "y" {
 			set = true
 		}
 	})
 	return set
 }
 
-func contOnErrArg() bool {
+// keepOnArg returns true iff keep-going has been explicitly supplied
+// among args.
+func keepOnArg() bool {
 	if len(os.Args) <= 1 {
 		return false
 	}
 	for _, a := range os.Args[1:] {
-		if contErrRe.MatchString(a) {
+		if keepOnRe.MatchString(a) {
 			return true
 		}
 	}

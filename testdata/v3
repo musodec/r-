@@ -2,7 +2,7 @@ NFlags = 1; NArgs = 0
 Version = v0.0.3
 verbosity = 3
 recursive = false
-continue-on-error = false
+keep-going = false
 Working Directory: /home/dec/sdev/go/src/r~/testdir
 Removed --flag-like~
 Removed .hid~
