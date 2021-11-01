@@ -1,11 +1,15 @@
+# Backup files + the executable r~ build locally
 *~
+
+# Test directory
 testdir/
 
+# Exports from DEV.org
+DEV.md
+DEV.html
+
 # Binaries for programs and plugins
-*.exe
-*.dll
-*.so
-*.dylib
+r~.exe
 
 # Test binary, built with `go test -c`
 *.test

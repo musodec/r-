@@ -8,6 +8,7 @@ clean :
 	go clean
 
 test :
+	go test
 	./dotest.sh
 
 testdir :

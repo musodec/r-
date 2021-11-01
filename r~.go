@@ -52,7 +52,7 @@ const (
 	emptyDoc   = ""
 	suffix     = "~"
 	globSuffix = "*" + suffix
-	keepOnPat  = `^--?k(keep-going)?$`
+	keepOnPat  = `^--?k(eep-going)?$`
 	yesOrNoPat = `(?i:^[[:blank:]]*y(?:es)?\W)|(?:^\s*$)`
 	usagePre   = `  r~ [options...] [--] [<dir>]
   r~ --help

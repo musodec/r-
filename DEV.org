@@ -1,5 +1,9 @@
-RATIONALE:
-=========
+#+TITLE: Development Notes
+#+AUTHOR: Declan Murphy
+
+* RATIONALE
+
+** Directory Traversal
 
 Unfortunately we have two different implementations
 of directory traversal: one for the recursive case
@@ -13,6 +17,8 @@ Ultimately perhaps a custom traversal routine may be
 better: avoid the above split/duplication of
 implementation + avoid the waste of sort in Walk.
 
+** Exit Code
+
 Global exitCode with its own type is a little clunky,
 but it does effectively coerce exit values to be
 one such ExitCode, for all non-panic termination.
@@ -24,13 +30,14 @@ would have been necessary for a more functional
 approach.  Arguably, this would have been even
 more clunky.
 
+** Flag Parsing
+
 The flag usage syntax derives from the go flag standard
 library.  This imposes some constraints that differ
 from the Gnu Readline library.
 
 
-USAGE:
-=====
+* USAGE
 
 r~ [options...] [--] [<dir>]
 r~ -h | --help
@@ -49,3 +56,23 @@ options:
 If both --verbose and --verbosity are supplied, then verbosity must be 2.
 If either --help or --Version are supplied, then that must be the only opt supplied.
 Single or double hyphens OK; no Gnu readline style combining of short form options.
+
+
+* ToDo LIST
+
+** OPEN Add more tests...!
+
+** TODO Add man, info pages
+** TODO Support numbered backup removal and supplied suffix
+Perhaps also respect associated env vars;
+see Backup Options info page.
+** TODO Support return code mode
+0=clean 1=dirty=would-remove-file(s) 2=err
+** TODO Add example of git hook setup
+** TODO Add paranoid mode
+Require interactive confirmation if:
+*** No file found to match filename without suffix
+*** File found to match filename without suffix is of a different type
+*** File found to match filename without suffix has substantial diff
+** TODO Establish go version requirement
+** TODO Test Windows compatability
