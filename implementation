@@ -24,6 +24,10 @@ would have been necessary for a more functional
 approach.  Arguably, this would have been even
 more clunky.
 
+The flag usage syntax derives from the go flag standard
+library.  This imposes some constraints that differ
+from the Gnu Readline library.
+
 
 USAGE:
 =====

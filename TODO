@@ -5,3 +5,6 @@ Support numbered backup removal and supplied suffix;
     perhaps also respect associated env vars,
     see Backup Options info page.
 Support return code mode: 0=clean 1=dirty 2=err.
+Add example of git hook setup.
+Establish go version requirement.
+Test building + working on Windows.
